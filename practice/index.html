@@ -1,0 +1,677 @@
+<title>Dreireihen-Trainer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: one narrow working column; a keycap legend under the name, then three views (type, shortcuts, outside). */
+:root {
+  --bg: #eceef1;
+  --surface: #ffffff;
+  --ink: #191c22;
+  --muted: #5b6370;
+  --line: #d3d8df;
+  --accent: #9c5600;
+  --accent-soft: #f5e6cf;
+  --ok: #2c7a4c;
+  --ok-soft: #dcefe3;
+  --bad: #be3a2d;
+  --bad-soft: #f8dbd6;
+  --cap: #f7f8fa;
+  --cap-edge: #b9c0ca;
+  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121418; --surface: #1b1e24; --ink: #e6e8ec; --muted: #9aa1ad; --line: #2d3139;
+    --accent: #e4a64a; --accent-soft: #3a2c17; --ok: #62c08a; --ok-soft: #1d3326;
+    --bad: #f07a6e; --bad-soft: #43231f; --cap: #23272e; --cap-edge: #3b4049;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121418; --surface: #1b1e24; --ink: #e6e8ec; --muted: #9aa1ad; --line: #2d3139;
+  --accent: #e4a64a; --accent-soft: #3a2c17; --ok: #62c08a; --ok-soft: #1d3326;
+  --bad: #f07a6e; --bad-soft: #43231f; --cap: #23272e; --cap-edge: #3b4049;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap {
+  max-width: 900px; margin: 0 auto;
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 22px;
+}
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 6vw, 44px); font-weight: 800; font-stretch: 72%; letter-spacing: 0.01em; text-transform: uppercase; line-height: 1; }
+h2 { font-size: 20px; font-weight: 700; font-stretch: 85%; }
+h3 { font-size: 17px; font-weight: 700; font-stretch: 90%; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 62ch; }
+.mut { color: var(--muted); }
+.small { font-size: 13px; }
+
+/* keycaps */
+.cap {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.9em; height: 1.9em; padding: 0 0.45em;
+  font-family: var(--f-mono); font-size: 13px; font-weight: 500; color: var(--ink);
+  background: var(--cap); border: 1px solid var(--cap-edge); border-bottom-width: 3px; border-radius: 6px;
+  white-space: nowrap;
+}
+.cap.combo { font-family: var(--f-body); font-weight: 600; letter-spacing: 0.02em; }
+.cap.on { background: var(--accent-soft); border-color: var(--accent); }
+.cap.lit { background: var(--ok-soft); border-color: var(--ok); }
+.caps { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.legend { display: grid; gap: 8px; }
+.legend .row { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.legend .lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); min-width: 7.5em; }
+
+/* tabs */
+.tabs { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; justify-self: start; }
+.tabs button {
+  font: 600 14px/1 var(--f-body); color: var(--muted); background: transparent; border: 0; border-radius: 7px;
+  padding: 9px 14px; cursor: pointer;
+}
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 16px; min-width: 0; }
+.btn {
+  font: 600 13px/1 var(--f-body); color: var(--ink); background: var(--cap); border: 1px solid var(--cap-edge);
+  border-bottom-width: 2px; border-radius: 8px; padding: 8px 12px; cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+
+/* typing */
+.levels { display: flex; flex-wrap: wrap; gap: 6px; }
+.lv {
+  display: grid; gap: 2px; text-align: left; cursor: pointer;
+  background: var(--cap); border: 1px solid var(--cap-edge); border-bottom-width: 3px; border-radius: 8px;
+  padding: 7px 11px; font-family: var(--f-body); color: var(--ink);
+}
+.lv b { font: 700 12px/1 var(--f-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lv span { font-size: 14px; font-weight: 600; }
+.lv[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.lv[aria-pressed="true"] b { color: var(--accent); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.toolbar .grp { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--cap-edge); border-radius: 8px; overflow: hidden; }
+.seg button { font: 600 13px/1 var(--f-body); background: var(--cap); color: var(--muted); border: 0; padding: 8px 11px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.typebox { position: relative; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); min-width: 0; }
+.typebox.focus { border-color: var(--accent); }
+.target {
+  margin: 0; padding: 18px 20px; min-height: 7em;
+  font-family: var(--f-mono); font-size: clamp(16px, 2.3vw, 20px); line-height: 1.75;
+  white-space: pre-wrap; word-break: break-word; color: var(--muted);
+}
+.target .ok { color: var(--ink); }
+.target .bad { color: var(--bad); background: var(--bad-soft); border-radius: 2px; }
+.target .todo { color: var(--muted); opacity: 0.75; }
+.target .cur { color: var(--ink); box-shadow: inset 2px 0 0 var(--accent); background: var(--accent-soft); border-radius: 2px; animation: blink 1.1s steps(2, start) infinite; }
+.target .nl { font-size: 0.7em; vertical-align: 0.15em; padding: 0 0.15em; }
+@keyframes blink { 50% { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .target .cur { animation: none; } }
+#typeInput {
+  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; resize: none; border: 0;
+  cursor: text; font: inherit; color: transparent; background: transparent; caret-color: transparent;
+}
+.hint { position: absolute; right: 12px; bottom: 10px; font-size: 12px; color: var(--muted); pointer-events: none; }
+.typebox.focus .hint { display: none; }
+.comp { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--accent); pointer-events: none; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--f-mono); font-size: 14px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.stats strong { color: var(--ink); font-weight: 500; }
+.result { border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 12px; }
+.result .nums { display: flex; flex-wrap: wrap; gap: 10px 28px; }
+.num { display: grid; }
+.num b { font: 700 28px/1.1 var(--f-display); font-stretch: 80%; font-variant-numeric: tabular-nums; }
+.num span { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.trouble { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.trouble .cap small { font-family: var(--f-body); color: var(--muted); margin-left: 4px; font-weight: 500; }
+.side { display: grid; gap: 6px; }
+
+/* tasks */
+.tasks { display: grid; gap: 14px; }
+.task { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; min-width: 0; }
+.task.done { border-color: var(--ok); }
+.task header { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.tnum { font: 700 13px/1 var(--f-display); color: var(--muted); letter-spacing: 0.06em; min-width: 1.6em; }
+.task header h3 { flex: 1 1 auto; min-width: 0; }
+.tag { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+.tag.ok { background: var(--ok-soft); color: var(--ok); }
+.how { max-width: 68ch; }
+.fields { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.fields textarea {
+  width: 100%; min-width: 0; resize: vertical; font: 15px/1.55 var(--f-mono); color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+}
+.fields textarea[readonly] { background: var(--cap); }
+.task footer { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.state { font-size: 14px; font-weight: 600; }
+.state.ok { color: var(--ok); }
+.state.warn { color: var(--accent); }
+
+/* outside */
+.groups { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.group { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.check { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: start; cursor: pointer; }
+.check input { margin-top: 4px; width: 16px; height: 16px; accent-color: var(--accent); }
+.check .caps { grid-column: 2; }
+.check.is-done .txt { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+.headrow { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:14px">
+    <h1>Dreireihen-Trainer</h1>
+    <p class="lede">Übungen für dein reduziertes Layout: drei Buchstabenreihen, Daumentasten, ⌘ und ⇧. Die Texte nutzen nur Tasten, die du schon hast. Ziffern, Klammern und Umlaute kommen erst in späteren Stufen oder gar nicht vor.</p>
+    <div class="legend" aria-label="Tasten im Layout">
+      <div class="row"><span class="lbl">Buchstaben</span><div class="caps"><span class="cap">a–z</span><span class="cap">,</span><span class="cap">.</span><span class="cap">/</span><span class="cap">;</span><span class="cap">'</span><span class="cap">-</span></div></div>
+      <div class="row"><span class="lbl">Mit ⇧</span><div class="caps"><span class="cap">A–Z</span><span class="cap">?</span><span class="cap">:</span><span class="cap">"</span><span class="cap">_</span></div></div>
+      <div class="row"><span class="lbl">Daumen &amp; Rand</span><div class="caps"><span class="cap">␣</span><span class="cap">⏎</span><span class="cap">⌫</span><span class="cap">⇥</span><span class="cap">⎋</span><span class="cap combo">⌘</span><span class="cap combo">⇧</span><span class="cap combo">⌥</span><span class="cap combo">⌃</span></div></div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Bereiche">
+    <button role="tab" id="tab-tippen" data-view="tippen">Tippen</button>
+    <button role="tab" id="tab-shortcuts" data-view="shortcuts">Shortcuts</button>
+    <button role="tab" id="tab-draussen" data-view="draussen">Draußen üben</button>
+  </nav>
+
+  <!-- TIPPEN -->
+  <section id="view-tippen" class="panel" aria-labelledby="tab-tippen">
+    <div class="levels" id="levels"></div>
+    <div class="toolbar">
+      <p class="mut small" id="levelInfo"></p>
+      <div class="grp">
+        <div class="seg" role="group" aria-label="Sprache">
+          <button id="langDe" data-lang="de">DE</button>
+          <button id="langEn" data-lang="en">EN</button>
+        </div>
+        <button class="btn" id="btnRestart" title="Neu starten (⎋)">Neu starten</button>
+        <button class="btn" id="btnNext">Anderer Text</button>
+      </div>
+    </div>
+    <div class="typebox" id="typebox">
+      <pre class="target" id="target" aria-hidden="true"></pre>
+      <textarea id="typeInput" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" aria-label="Hier tippen"></textarea>
+      <span class="hint">Klick in den Text und tipp los</span>
+      <span class="comp" id="comp" hidden>Akzent wird gesetzt …</span>
+    </div>
+    <div class="stats" aria-live="off">
+      <span><strong id="sWpm">0</strong> WPM</span>
+      <span><strong id="sAcc">100</strong> % genau</span>
+      <span><strong id="sTime">0:00</strong></span>
+      <span class="mut">⎋ startet neu · ⏎ nach dem Ende holt den nächsten Text</span>
+    </div>
+    <div class="result" id="result" hidden>
+      <div class="nums">
+        <div class="num"><b id="rWpm">0</b><span>WPM</span></div>
+        <div class="num"><b id="rAcc">0 %</b><span>Genauigkeit</span></div>
+        <div class="num"><b id="rTime">0:00</b><span>Zeit</span></div>
+        <div class="num"><b id="rBest">0</b><span id="rBestLbl">Bestwert</span></div>
+      </div>
+      <div class="side">
+        <span class="small mut">Vertippt in diesem Text</span>
+        <div class="trouble" id="rTrouble"></div>
+      </div>
+      <div class="side">
+        <span class="small mut">Deine häufigsten Problemzeichen insgesamt</span>
+        <div class="trouble" id="rTroubleAll"></div>
+      </div>
+      <div><button class="btn primary" id="btnNext2">Nächster Text ⏎</button></div>
+    </div>
+  </section>
+
+  <!-- SHORTCUTS -->
+  <section id="view-shortcuts" aria-labelledby="tab-shortcuts" style="display:grid;gap:14px">
+    <div class="headrow">
+      <h2>Shortcuts mit links, Maus in rechts</h2>
+      <span class="mut small" id="taskProgress"></span>
+    </div>
+    <p class="lede">Markier mit der Maus, die linke Hand macht den Rest. Eine Aufgabe gilt als geschafft, wenn der Text stimmt und die geforderten Shortcuts wirklich gedrückt wurden. Erkannte Shortcuts leuchten grün.</p>
+    <div class="tasks" id="tasks"></div>
+  </section>
+
+  <!-- DRAUSSEN -->
+  <section id="view-draussen" aria-labelledby="tab-draussen" style="display:grid;gap:14px">
+    <div class="headrow">
+      <h2>Im echten Alltag</h2>
+      <span class="mut small" id="outProgress"></span>
+    </div>
+    <p class="lede">Kleine Aufgaben in deinen eigenen Apps. Die Seite kann sie nicht prüfen, abhaken musst du selbst.</p>
+    <div class="groups" id="groups"></div>
+    <div><button class="btn" id="btnOutReset">Alle Haken entfernen</button></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  /* ---------- storage (per-viewer convenience only) ---------- */
+  const KEY = 'dreireihen.v1';
+  let store = {};
+  try { store = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { store = {}; }
+  store.best = store.best || {}; store.errs = store.errs || {}; store.done = store.done || {}; store.out = store.out || {};
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const norm = (s) => s.replace(/[‘’‚‛]/g, "'").replace(/[“”„]/g, '"').replace(/[–—]/g, '-').replace(/ /g, ' ');
+
+  /* ---------- texts ---------- */
+  const LEVELS = [
+    { n: 1, name: 'Fließtext', info: 'Nur Kleinbuchstaben, Leerzeichen, Komma und Punkt. Kein ⇧.' },
+    { n: 2, name: 'Großschreibung', info: 'Echte Sätze mit Großbuchstaben. Hier testest du deine ⇧-Position.' },
+    { n: 3, name: 'Satzzeichen', info: 'Dazu ? : ; \' " - _ / – alles ohne Zahlenreihe erreichbar.' },
+    { n: 4, name: 'Absätze', info: 'Mails und Notizen mit Zeilenumbrüchen. ⏎ gehört zum Text.' },
+    { n: 5, name: 'Kommandozeile', info: 'Echte Befehle mit Flags und Pfaden. Jede Zeile endet mit ⏎.' },
+    { n: 6, name: 'Umlaute', info: 'Nur Deutsch. ä ö ü über ⌥U und dann den Vokal. Braucht ⌥.' }
+  ];
+  const TEXTS = {
+    1: {
+      de: [
+        'der zug war voll, also stand ich am fenster und sah den regen. in der stadt war es ruhig, nur ein hund bellte irgendwo. ich trank meinen kaffee, las die zeitung und wartete auf meine haltestelle.',
+        'am samstag backen wir brot. das mehl steht im regal, die hefe liegt im kalten fach. wir kneten den teig, lassen ihn ruhen und heizen den ofen an. am ende riecht die ganze wohnung nach sonntag.',
+        'im herbst sind die tage kurz. wir gehen nach der arbeit noch eine runde um den see, sammeln kastanien und reden wenig. zu hause gibt es suppe, brot und tee.'
+      ],
+      en: [
+        'the kettle clicked off, and the kitchen went quiet. outside, a bus slowed at the corner, then pulled away. i poured the water, waited for the tea to darken, and opened my notes for the day.',
+        'we left early, before the city woke up. the roads were empty, the radio was low, and the coffee was still too hot to drink. by noon we reached the coast, cold and windy, and perfect.',
+        'the meeting ran long, as meetings do. someone shared a slide, someone else asked about the budget, and the clock kept moving. in the end we agreed on one small step, which felt like enough.'
+      ]
+    },
+    2: {
+      de: [
+        'Lena hat am Freitag ihren ersten Arbeitstag in Bozen. Sie nimmt den Zug um halb acht, steigt in Trient um und kommt kurz vor neun an. Im Rucksack hat sie den Laptop, ein Ladekabel, einen Apfel und ein Buch, das sie seit Wochen lesen will.',
+        'Die Werkstatt liegt am Ende der Gasse. Dort repariert Marco seit zwanzig Jahren alte Motorroller, meistens Vespas, manchmal auch eine Lambretta. Er arbeitet langsam, aber genau, und er gibt nie eine Schraube aus der Hand, ohne sie vorher zu putzen.',
+        'Am Wochenende hat Paul seine Tastatur neu belegt. Jetzt liegt die Befehlstaste unter dem Daumen, und die Umschalttaste ist ganz nach links gerutscht. Die ersten Tage waren langsam und voller Tippfehler, aber am Mittwoch lief es schon besser, und am Freitag dachte er kaum noch daran.'
+      ],
+      en: [
+        'On Monday, Priya moved her desk closer to the window. The light was better, the plants were happier, and she finally stopped squinting at her screen. By Wednesday, the whole team wanted to move too.',
+        'The new keyboard sat on the desk like a strange instrument. For the first hour, every word felt like a puzzle. By the evening, Tom could type a short email without looking down, slowly, but without panic.',
+        'Rome was hot in July, so we walked early and rested at noon. In the evening, the streets filled again, and we ate late, the way everyone else did.'
+      ]
+    },
+    3: {
+      de: [
+        'Kurze Frage: Hast du die Datei schon hochgeladen? Falls nicht, kein Problem; ich warte bis morgen. Sie liegt unter projekte/glove/notizen.txt - oder hast du sie umbenannt?',
+        '"Wann fahren wir los?", fragte Mia. "Um acht", sagte Jonas, "aber nur, wenn du bis dahin wach bist." Sie lachte: "Ich bin immer wach."',
+        'Benenne die Variable user_name in display_name um; der alte Name ist zu ungenau. Danach: Tests laufen lassen, Commit schreiben, fertig. Einverstanden?'
+      ],
+      en: [
+        "Quick question: did you push the branch? If not, that's fine; I'll review it tomorrow. The file is in docs/setup/keyboard.md - or did you rename it?",
+        '"Is it working?" she asked. "Mostly," I said, "but the semicolon still trips me up." She grinned: "Give it a week."',
+        "Rename user_id to account_id; it's clearer. Then update the API docs, the CLI help text, and the README. Questions? Ask in the team channel - don't wait."
+      ]
+    },
+    4: {
+      de: [
+        'Hallo Sara,\n\ndanke dir, das Treffen gestern war gut. Ich schicke dir heute noch die Notizen, dann kannst du sie in Ruhe lesen.\n\nEine Sache noch: Kannst du bis Freitag sagen, ob der Termin im Dezember passt?\n\nBis bald,\nAndrea',
+        'Wochenplan\n\nMontag: Layout testen, nur Buchstaben.\nDienstag: Satzzeichen dazu.\nMittwoch: Befehlstaste am Daumen ausprobieren.\nDonnerstag: Notizen lesen und entscheiden, was fehlt.\nFreitag: Pause.'
+      ],
+      en: [
+        'Hi Marco,\n\nthanks for the quick fix yesterday. I tested it on my machine and it works, except for one edge case with empty input.\n\nCould you take a look before Friday? No rush otherwise.\n\nBest,\nAndrea',
+        'Notes from the call\n\n- Ship the beta to a small group first.\n- Collect feedback in one shared doc.\n- Decide on pricing next week, not now.\n- Andrea owns the follow-up.'
+      ]
+    },
+    5: {
+      de: [
+        "git status\ngit add -p src/parser.c\ngit commit -m 'fix off-by-one in parser'\ngit push --set-upstream origin feature/parser",
+        'cd ../docs; ls -la\ngrep -rn todo src/\ncurl -sS https://example.com/health\ndocker compose up -d',
+        'brew update; brew upgrade --greedy\nvim .zshrc\ntmux new -s notes\ngit rebase -i origin/main\necho "done"'
+      ]
+    },
+    6: {
+      de: [
+        'Über den Hügeln lag Nebel. Wir fuhren früh los, hörten Musik und hielten in einem kleinen Dorf, wo es den besten Käse der Gegend gab.',
+        'Könntest du mir bis Dienstag sagen, ob die Änderungen für die Präsentation fertig sind? Ich würde sie gern vorher noch einmal prüfen.',
+        'Die Tastatur fühlt sich jetzt ruhiger an. Öfter mal eine Pause, weniger Sprünge, und die Hände bleiben, wo sie hingehören.'
+      ]
+    }
+  };
+
+  /* ---------- views ---------- */
+  const VIEWS = ['tippen', 'shortcuts', 'draussen'];
+  function showView(v) {
+    if (!VIEWS.includes(v)) v = 'tippen';
+    VIEWS.forEach((name) => {
+      $('view-' + name).hidden = name !== v;
+      $('tab-' + name).setAttribute('aria-selected', String(name === v));
+    });
+    store.view = v; save();
+  }
+  document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
+    const v = b.dataset.view;
+    if (location.hash.slice(1) === v) showView(v); else location.hash = v;
+  }));
+  window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
+
+  /* ---------- typing ---------- */
+  let level = LEVELS.some((l) => l.n === store.level) ? store.level : 1;
+  let lang = store.lang === 'en' ? 'en' : 'de';
+  const idx = {};
+  const st = { target: '', prev: 0, start: 0, end: 0, keys: 0, errs: 0, errChars: {}, done: false, composing: false, timer: null };
+  const input = $('typeInput'), targetEl = $('target'), typebox = $('typebox');
+
+  function effLang() { return TEXTS[level][lang] ? lang : 'de'; }
+  function poolKey() { return level + '-' + effLang(); }
+
+  function renderLevels() {
+    $('levels').innerHTML = LEVELS.map((l) =>
+      `<button class="lv" data-level="${l.n}" aria-pressed="${l.n === level}"><b>Stufe ${l.n}</b><span>${esc(l.name)}</span></button>`).join('');
+    $('levels').querySelectorAll('.lv').forEach((b) => b.addEventListener('click', () => {
+      level = Number(b.dataset.level); store.level = level; save(); renderLevels(); nextText(); input.focus();
+    }));
+    const L = LEVELS.find((l) => l.n === level);
+    $('levelInfo').textContent = L.info;
+    const onlyDe = !TEXTS[level].en;
+    $('langEn').disabled = onlyDe;
+    ['de', 'en'].forEach((code) => $(code === 'de' ? 'langDe' : 'langEn').setAttribute('aria-pressed', String(effLang() === code)));
+  }
+  ['langDe', 'langEn'].forEach((id) => $(id).addEventListener('click', () => {
+    lang = $(id).dataset.lang; store.lang = lang; save(); renderLevels(); nextText(); input.focus();
+  }));
+
+  function nextText() {
+    const pool = TEXTS[level][effLang()];
+    const k = poolKey();
+    idx[k] = idx[k] === undefined ? Math.floor(Math.random() * pool.length) : (idx[k] + 1) % pool.length;
+    loadText(pool[idx[k]]);
+  }
+  function loadText(t) {
+    clearInterval(st.timer);
+    Object.assign(st, { target: t, prev: 0, start: 0, end: 0, keys: 0, errs: 0, errChars: {}, done: false, timer: null });
+    input.value = ''; input.readOnly = false;
+    $('result').hidden = true;
+    render(); live();
+  }
+
+  function render() {
+    const v = input.value, t = st.target;
+    let out = '';
+    for (let i = 0; i < t.length; i++) {
+      const c = t[i];
+      let cls;
+      if (i < v.length) cls = v[i] === c ? 'ok' : 'bad';
+      else if (i === v.length && !st.done) cls = 'cur';
+      else cls = 'todo';
+      if (c === '\n') out += `<span class="${cls}"><span class="nl">⏎</span></span>\n`;
+      else out += `<span class="${cls}">${cls === 'bad' && c === ' ' ? '·' : esc(c)}</span>`;
+    }
+    targetEl.innerHTML = out;
+  }
+
+  function fmtTime(sec) { const s = Math.floor(sec); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  function metrics() {
+    const v = input.value;
+    const elapsed = st.start ? ((st.done ? st.end : performance.now()) - st.start) / 1000 : 0;
+    let correct = 0;
+    for (let i = 0; i < v.length; i++) if (v[i] === st.target[i]) correct++;
+    const wpm = elapsed > 1.5 ? Math.round(correct / 5 / (elapsed / 60)) : 0;
+    const acc = st.keys ? Math.round((100 * (st.keys - st.errs)) / st.keys) : 100;
+    return { elapsed, wpm, acc };
+  }
+  function live() {
+    const m = metrics();
+    $('sWpm').textContent = m.wpm; $('sAcc').textContent = m.acc; $('sTime').textContent = fmtTime(m.elapsed);
+  }
+
+  function onInput() {
+    if (st.done) return;
+    let v = norm(input.value);
+    if (v.length > st.target.length) v = v.slice(0, st.target.length);
+    if (v !== input.value) { input.value = v; input.setSelectionRange(v.length, v.length); }
+    if (!st.start && v.length) { st.start = performance.now(); st.timer = setInterval(live, 500); }
+    if (v.length > st.prev) {
+      for (let i = st.prev; i < v.length; i++) {
+        st.keys++;
+        if (v[i] !== st.target[i]) { st.errs++; const c = st.target[i]; st.errChars[c] = (st.errChars[c] || 0) + 1; }
+      }
+    }
+    st.prev = v.length;
+    render(); live();
+    if (v.length === st.target.length) finish();
+  }
+
+  function charName(c) { return c === ' ' ? 'Leer' : c === '\n' ? '⏎' : c; }
+  function troubleHtml(map, limit) {
+    const list = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, limit);
+    if (!list.length) return '<span class="small mut">Keine Fehler. Sauber.</span>';
+    return list.map(([c, n]) => `<span class="cap">${esc(charName(c))}<small>${n}×</small></span>`).join('');
+  }
+
+  function finish() {
+    st.done = true; st.end = performance.now(); clearInterval(st.timer);
+    input.readOnly = true;
+    const m = metrics();
+    const k = poolKey();
+    const prevBest = store.best[k] || 0;
+    if (m.wpm > prevBest) store.best[k] = m.wpm;
+    Object.entries(st.errChars).forEach(([c, n]) => { store.errs[c] = (store.errs[c] || 0) + n; });
+    save();
+    $('rWpm').textContent = m.wpm;
+    $('rAcc').textContent = m.acc + ' %';
+    $('rTime').textContent = fmtTime(m.elapsed);
+    $('rBest').textContent = store.best[k] || m.wpm;
+    $('rBestLbl').textContent = m.wpm > prevBest && prevBest ? 'Neuer Bestwert' : `Bestwert Stufe ${level} ${effLang().toUpperCase()}`;
+    $('rTrouble').innerHTML = troubleHtml(st.errChars, 8);
+    $('rTroubleAll').innerHTML = troubleHtml(store.errs, 8);
+    $('result').hidden = false;
+    render(); live();
+  }
+
+  input.addEventListener('compositionstart', () => { st.composing = true; $('comp').hidden = false; });
+  input.addEventListener('compositionend', () => { st.composing = false; $('comp').hidden = true; onInput(); });
+  input.addEventListener('input', (e) => { if (e.isComposing || st.composing) return; onInput(); });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); loadText(st.target); return; }
+    if (e.key === 'Enter' && st.done) { e.preventDefault(); nextText(); return; }
+    if (e.key === 'Tab') { e.preventDefault(); return; }
+    if (e.key.startsWith('Arrow')) { e.preventDefault(); }
+  });
+  const toEnd = () => { const n = input.value.length; input.setSelectionRange(n, n); };
+  input.addEventListener('click', toEnd);
+  input.addEventListener('select', toEnd);
+  input.addEventListener('focus', () => { typebox.classList.add('focus'); toEnd(); });
+  input.addEventListener('blur', () => typebox.classList.remove('focus'));
+  $('btnRestart').addEventListener('click', () => { loadText(st.target); input.focus(); });
+  $('btnNext').addEventListener('click', () => { nextText(); input.focus(); });
+  $('btnNext2').addEventListener('click', () => { nextText(); input.focus(); });
+
+  /* ---------- shortcut tasks ---------- */
+  const TASKS = [
+    { id: 't1', title: 'Wort kopieren', needs: { '⌘C': 1, '⌘V': 1 },
+      how: 'Doppelklick auf „Laptop“, dann ⌘C. Klick ans Ende der zweiten Zeile und füge mit ⌘V ein.',
+      fields: [{ value: 'Bitte bring morgen den Laptop mit.\nNicht vergessen: ', rows: 3 }],
+      check: (v) => v[0] === 'Bitte bring morgen den Laptop mit.\nNicht vergessen: Laptop' },
+    { id: 't2', title: 'Zeile verschieben', needs: { '⌘X': 1, '⌘V': 1 },
+      how: 'Die Schritte stehen falsch herum. Markier die zweite Zeile mit der Maus, ⌘X, setz den Cursor an den Anfang der ersten Zeile und füge mit ⌘V ein.',
+      fields: [{ value: 'Teebeutel in die Tasse legen.\nWasser kochen.\nWasser in die Tasse geben.', rows: 4 }],
+      check: (v) => v[0] === 'Wasser kochen.\nTeebeutel in die Tasse legen.\nWasser in die Tasse geben.' },
+    { id: 't3', title: 'In ein anderes Feld kopieren', needs: { '⌘A': 1, '⌘C': 1, '⌘V': 1 },
+      how: 'Klick ins linke Feld, ⌘A und ⌘C. Dann ins rechte Feld klicken und ⌘V.',
+      fields: [{ value: 'Treffpunkt: Haupteingang, Freitag halb neun. Bitte kurz zusagen.', rows: 3 }, { value: '', rows: 3 }],
+      check: (v) => v[1] !== '' && v[1] === v[0] },
+    { id: 't4', title: 'Liste sortieren', needs: { '⌘X': 2, '⌘V': 2 },
+      how: 'Bring die Liste in alphabetische Reihenfolge. Nur mit Maus, ⌘X und ⌘V, ohne etwas neu zu tippen.',
+      fields: [{ value: 'Kiwi\nApfel\nMango\nBirne\nFeige', rows: 6 }],
+      check: (v) => v[0] === 'Apfel\nBirne\nFeige\nKiwi\nMango' },
+    { id: 't5', title: 'Rückgängig und wiederherstellen', needs: { '⌘Z': 1, '⇧⌘Z': 1 },
+      how: 'Markier den letzten Satz und lösch ihn mit ⌫. Hol ihn mit ⌘Z zurück und lösch ihn mit ⇧⌘Z wieder.',
+      fields: [{ value: 'Das Paket kommt am Dienstag. Der Fahrer ruft vorher an. Dieser Satz soll weg.', rows: 3 }],
+      check: (v) => v[0] === 'Das Paket kommt am Dienstag. Der Fahrer ruft vorher an.' },
+    { id: 't6', title: 'Shortcut mehrfach drücken', needs: { '⌘Z': 3, '⇧⌘Z': 3 },
+      how: 'Lösch nacheinander „leider“, „wirklich“ und „eigentlich“ (Doppelklick, ⌫). Dann dreimal ⌘Z und dreimal ⇧⌘Z, möglichst ohne die Modifier zwischendurch loszulassen.',
+      fields: [{ value: 'Das ist leider wirklich eigentlich ganz einfach.', rows: 2 }],
+      check: (v) => v[0] === 'Das ist ganz einfach.' },
+    { id: 't7', title: 'Wortweise löschen', needs: { '⌥⌫': 3 }, option: true,
+      how: 'Klick ans Ende der Zeile und lösch die letzten drei Wörter mit ⌥⌫.',
+      fields: [{ value: 'Wir treffen uns morgen im Park ganz bestimmt vielleicht', rows: 2 }],
+      check: (v) => v[0] === 'Wir treffen uns morgen im Park' },
+    { id: 't8', title: 'Bis zum Zeilenanfang löschen', needs: { '⌘⌫': 1 },
+      how: 'Klick ans Ende der zweiten Zeile und lösch sie mit ⌘⌫ in einem Rutsch.',
+      fields: [{ value: 'Einkaufen\nBrot, Milch und alles, was hier weg muss', rows: 3 }],
+      check: (v) => v[0] === 'Einkaufen' },
+    { id: 't9', title: 'Zwischen Apps hin und zurück', needs: { '⌘C': 1, '⌘V': 1, 'App-Wechsel': 1 },
+      how: 'Markier die linke Zeile, ⌘C. Wechsel mit ⌘⇥ in eine andere App, zum Beispiel Notizen, füge ein und schreib „ erledigt“ dahinter. Dort ⌘A und ⌘C, mit ⌘⇥ zurück, ins rechte Feld klicken und ⌘V.',
+      fields: [{ value: 'Dreireihen-Test, Tag eins', rows: 2, readonly: true }, { value: '', rows: 2 }],
+      check: (v) => v[1].toLowerCase() === 'dreireihen-test, tag eins erledigt' }
+  ];
+  const counts = {};
+  let lastTask = null;
+
+  function normT(s) {
+    return norm(s).split('\n').map((l) => l.replace(/[ \t]+/g, ' ').trim()).filter(Boolean).join('\n');
+  }
+  function comboLabel(e) {
+    if (['Meta', 'Alt', 'Shift', 'Control', 'CapsLock', 'Dead'].includes(e.key) && !e.code.startsWith('Key')) return null;
+    if (!(e.metaKey || e.altKey || e.ctrlKey)) return null;
+    let k = e.code;
+    if (k.startsWith('Key')) k = k.slice(3);
+    else if (k.startsWith('Digit')) k = k.slice(5);
+    else k = { Backspace: '⌫', Tab: '⇥', Enter: '⏎', Escape: '⎋', Space: '␣', Delete: '⌦', ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓' }[k] || e.key;
+    if (!k || ['Meta', 'Alt', 'Shift', 'Control'].includes(k)) return null;
+    return (e.ctrlKey ? '⌃' : '') + (e.altKey ? '⌥' : '') + (e.shiftKey ? '⇧' : '') + (e.metaKey ? '⌘' : '') + k;
+  }
+
+  function buildTasks() {
+    const host = $('tasks');
+    host.innerHTML = TASKS.map((t, i) => `
+      <article class="task" id="${t.id}">
+        <header>
+          <span class="tnum">${i + 1}</span>
+          <h3>${esc(t.title)}</h3>
+          ${t.option ? '<span class="tag">braucht ⌥</span>' : ''}
+          <span class="tag ok" data-badge hidden>schon geschafft</span>
+        </header>
+        <p class="how">${esc(t.how)}</p>
+        <div class="fields">${t.fields.map((f, j) => `<textarea id="${t.id}-f${j}" rows="${f.rows}" spellcheck="false" autocomplete="off" ${f.readonly ? 'readonly' : ''} aria-label="${esc(t.title)} Feld ${j + 1}"></textarea>`).join('')}</div>
+        <footer>
+          <div class="caps" data-needs></div>
+          <div class="grp" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <span class="state" data-state></span>
+            <button class="btn" data-reset>Zurücksetzen</button>
+          </div>
+        </footer>
+      </article>`).join('');
+    TASKS.forEach((t) => {
+      const el = $(t.id);
+      resetTask(t);
+      el.addEventListener('focusin', () => { lastTask = t.id; });
+      el.addEventListener('keydown', (e) => {
+        const lbl = comboLabel(e);
+        if (!lbl) return;
+        counts[t.id][lbl] = (counts[t.id][lbl] || 0) + 1;
+        setTimeout(() => checkTask(t), 0);
+      });
+      el.querySelectorAll('textarea').forEach((ta) => ta.addEventListener('input', () => checkTask(t)));
+      el.querySelector('[data-reset]').addEventListener('click', () => resetTask(t));
+    });
+    window.addEventListener('blur', () => {
+      if (!lastTask) return;
+      const t = TASKS.find((x) => x.id === lastTask);
+      if (t && t.needs['App-Wechsel']) { counts[t.id]['App-Wechsel'] = (counts[t.id]['App-Wechsel'] || 0) + 1; checkTask(t); }
+    });
+  }
+  function resetTask(t) {
+    counts[t.id] = {};
+    t.fields.forEach((f, j) => { $(t.id + '-f' + j).value = f.value; });
+    checkTask(t, true);
+  }
+  function checkTask(t, quiet) {
+    const el = $(t.id);
+    const vals = t.fields.map((f, j) => normT($(t.id + '-f' + j).value));
+    const c = counts[t.id];
+    $(t.id).querySelector('[data-needs]').innerHTML = Object.entries(t.needs).map(([k, n]) => {
+      const have = c[k] || 0;
+      const label = k === 'App-Wechsel' ? 'App-Wechsel ⌘⇥' : k;
+      const cnt = n > 1 ? ` ${Math.min(have, n)}/${n}` : '';
+      return `<span class="cap combo ${have >= n ? 'lit' : ''}">${esc(label)}${cnt}</span>`;
+    }).join('');
+    const textOk = t.check(vals);
+    const missing = Object.entries(t.needs).filter(([k, n]) => (c[k] || 0) < n).map(([k]) => k === 'App-Wechsel' ? 'der App-Wechsel' : k);
+    const stateEl = el.querySelector('[data-state]');
+    stateEl.className = 'state';
+    if (textOk && !missing.length) {
+      stateEl.textContent = 'Geschafft';
+      stateEl.classList.add('ok');
+      if (!quiet && !store.done[t.id]) { store.done[t.id] = true; save(); }
+    } else if (textOk) {
+      stateEl.textContent = 'Text stimmt, es fehlt noch ' + missing.join(', ');
+      stateEl.classList.add('warn');
+    } else {
+      stateEl.textContent = '';
+    }
+    el.classList.toggle('done', !!store.done[t.id]);
+    el.querySelector('[data-badge]').hidden = !store.done[t.id];
+    $('taskProgress').textContent = `${TASKS.filter((x) => store.done[x.id]).length} von ${TASKS.length} geschafft`;
+  }
+
+  /* ---------- outside checklist ---------- */
+  const OUT = [
+    { g: 'Finder', items: [
+      ['f1', 'Eine Datei kopieren und im selben Ordner einfügen', ['⌘C', '⌘V']],
+      ['f2', 'Eine Datei verschieben statt kopieren', ['⌘C', '⌥⌘V']],
+      ['f3', 'Mehrere Dateien mit der Maus markieren und in den Papierkorb legen', ['⌘⌫']]
+    ] },
+    { g: 'Browser', items: [
+      ['b1', 'Neuen Tab öffnen, Adresse tippen, Tab wieder schließen', ['⌘T', '⌘W']],
+      ['b2', 'Drei Tabs schließen und alle drei hintereinander wiederherstellen', ['⌘W', '⇧⌘T ×3']],
+      ['b3', 'Adresse markieren und die URL kopieren', ['⌘L', '⌘C']]
+    ] },
+    { g: 'Terminal', items: [
+      ['t1', 'Einen laufenden Befehl abbrechen und den Bildschirm leeren', ['⌃C', '⌃L']],
+      ['t2', 'Einen alten Befehl im Verlauf suchen', ['⌃R']],
+      ['t3', 'Eine halb getippte Zeile verwerfen', ['⌃U']]
+    ] },
+    { g: 'Vim', items: [
+      ['v1', 'Datei öffnen, eine Zeile löschen, speichern und schließen', ['⎋', 'dd', 'ZZ']],
+      ['v2', 'Änderungen verwerfen und schließen', ['⎋', 'ZQ']]
+    ] },
+    { g: 'Zwischen Apps', items: [
+      ['a1', 'Text in einer Mail markieren, ausschneiden und in Notizen einfügen', ['⌘X', '⌘⇥', '⌘V']],
+      ['a2', 'Mit gehaltenem ⌘ durch drei Apps wechseln', ['⌘⇥⇥⇥']]
+    ] }
+  ];
+  function buildOut() {
+    $('groups').innerHTML = OUT.map((grp) => `
+      <div class="group">
+        <h3>${esc(grp.g)}</h3>
+        ${grp.items.map(([id, txt, keys]) => `
+          <label class="check ${store.out[id] ? 'is-done' : ''}" for="out-${id}">
+            <input type="checkbox" id="out-${id}" data-id="${id}" ${store.out[id] ? 'checked' : ''}>
+            <span class="txt">${esc(txt)}</span>
+            <span class="caps">${keys.map((k) => `<span class="cap combo">${esc(k)}</span>`).join('')}</span>
+          </label>`).join('')}
+      </div>`).join('');
+    $('groups').querySelectorAll('input[type=checkbox]').forEach((cb) => cb.addEventListener('change', () => {
+      if (cb.checked) store.out[cb.dataset.id] = true; else delete store.out[cb.dataset.id];
+      cb.closest('.check').classList.toggle('is-done', cb.checked);
+      save(); outProgress();
+    }));
+    outProgress();
+  }
+  function outProgress() {
+    const total = OUT.reduce((n, g) => n + g.items.length, 0);
+    const done = OUT.reduce((n, g) => n + g.items.filter(([id]) => store.out[id]).length, 0);
+    $('outProgress').textContent = `${done} von ${total} abgehakt`;
+  }
+  $('btnOutReset').addEventListener('click', () => { store.out = {}; save(); buildOut(); });
+
+  /* ---------- boot ---------- */
+  renderLevels();
+  nextText();
+  buildTasks();
+  buildOut();
+  showView(VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : (store.view || 'tippen'));
+})();
+</script>

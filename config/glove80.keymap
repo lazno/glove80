@@ -141,8 +141,8 @@
 
                 // Reihe 6 + untere Daumentasten
                 /* links     */ &magic LAYER_Magic 0    &none  &none  &none  &none  
-                /* Daumen L  */ &kp LGUI    &kp LALT    &kp BACKSPACE 
-                /* Daumen R  */ &kp RGUI     &kp RET    &kp SPACE 
+                /* Daumen L  */ &kp LGUI        &kp LALT    &kp DEL 
+                /* Daumen R  */ &kp BACKSPACE   &kp RET    &kp SPACE 
                 /* rechts    */ &none                   &none  &none  &none  &none
             >;
         };
