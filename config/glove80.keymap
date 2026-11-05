@@ -17,8 +17,7 @@
 /* ===== Layer ===== */
 
 #define LAYER_Base    0
-#define LAYER_Magic   2
-#define LAYER_Factory 3
+#define LAYER_Magic   1
 
 
 
@@ -28,15 +27,17 @@
 
     behaviors {
 
-        /* Magic-Taste: halten = Magic-Layer, tippen = Statusanzeige ueber die LEDs
-         * Verwendung im Keymap: &magic LAYER_Magic RGB_STATUS
+        /* Magic-Taste: halten = Magic-Layer, tippen = Akku- und Layer-Anzeige ueber die LEDs.
+         * Verwendung im Keymap: &magic LAYER_Magic 0  (die 0 ist nur ein Platzhalter)
+         * RGB_STATUS gibt es nur in MoErgos ZMK. Es steht fuer zwei Werte und muss deshalb
+         * in einem eigenen Macro stecken, statt direkt an das Hold-Tap uebergeben zu werden.
          */
         magic: magic {
             compatible = "zmk,behavior-hold-tap";
             #binding-cells = <2>;
             flavor = "tap-preferred";
             tapping-term-ms = <200>;
-            bindings = <&mo>, <&rgb_ug>;
+            bindings = <&mo>, <&rgb_ug_status_macro>;
         };
 
         /* Bluetooth-Profile: einmal tippen = auswaehlen, zweimal tippen = Verbindung trennen */
@@ -70,6 +71,13 @@
     /* ===== Macros ===== */
 
     macros {
+
+        /* LED-Statusanzeige (Akku beider Haelften, aktiver Layer, Bluetooth-Profil) */
+        rgb_ug_status_macro: rgb_ug_status_macro {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&rgb_ug RGB_STATUS>;
+        };
 
         /* Ausgabe auf Bluetooth stellen (sonst gewinnt USB, wenn ein Kabel steckt)
          * und dann das Profil auswaehlen
@@ -129,17 +137,17 @@
                 /* links     */ &kp LSHIFT   &kp Z      &kp X       &kp C       &kp V       &kp B
                 /* Daumen L  */ &none   &none    &none
                 /* Daumen R  */ &none   &none    &none 
-                /* rechts    */ &kp N       &kp M       &kp COMMA   &kp DOT     &kp FSLH    &kp RSHFT
+                /* rechts    */ &kp N        &kp M      &kp COMMA   &kp DOT     &kp FSLH    &kp RSHFT
 
                 // Reihe 6 + untere Daumentasten
-                /* links     */ &magic LAYER_Magic RGB_STATUS    &none  &none  &none  &none  
-                /* Daumen L  */ &kp LGUI    &kp LALT    &kp DEL
-                /* Daumen R  */ &kp RGUI     &kp RET     &kp SPACE 
-                /* rechts    */ &none      &none    &none    &none    &none
+                /* links     */ &magic LAYER_Magic 0    &none  &none  &none  &none  
+                /* Daumen L  */ &kp LGUI    &kp LALT    &kp BACKSPACE 
+                /* Daumen R  */ &kp RGUI     &kp RET    &kp SPACE 
+                /* rechts    */ &none                   &none  &none  &none  &none
             >;
         };
 
-        /* ----- 2: Magic (Bluetooth, RGB, Bootloader) ----- */
+        /* ----- 1: Magic (Bluetooth, RGB, Bootloader) ----- */
         layer_Magic {
             bindings = <
                 // Reihe 1
@@ -168,7 +176,7 @@
                 /* links     */ &none            &none            &none            &none            &none
                 /* Daumen L  */ &bt_0            &bt_1            &out OUT_USB
                 /* Daumen R  */ &none            &none            &none
-                /* rechts    */ &none            &none            &none            &none            &to LAYER_Factory
+                /* rechts    */ &none            &none            &none            &none            &none
             >;
         };
 
