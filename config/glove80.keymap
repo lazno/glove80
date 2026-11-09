@@ -9,7 +9,8 @@
 
 #define LAYER_Base    0
 #define LAYER_Nav     1
-#define LAYER_Magic   2
+#define LAYER_Sym     2
+#define LAYER_Magic   3
 
 
 
@@ -43,6 +44,11 @@
             bindings = <&kp>, <&kp>;
         };
 
+        sym_sym: sym_sym { compatible = "zmk,behavior-tap-dance";
+            #binding-cells = <0>;
+            tapping-term-ms = <200>;
+            bindings = <&mo LAYER_Sym>, <&tog LAYER_Sym>;
+        };
         /* Bluetooth-Profile: einmal tippen = auswaehlen, zweimal tippen = Verbindung trennen */
         bt_0: bt_0 {
             compatible = "zmk,behavior-tap-dance";
@@ -70,6 +76,18 @@
         };
     };
 
+    /* ===== Combos ===== /
+
+    combos {
+        compatible = "zmk,combos";
+
+        /* Zeige- + Mittelfinger auf der Home-Row = Sym-Layer (beide Combos, ein Layer).
+         * J+K halten: links tippen.  D+F halten: rechts tippen.
+         * Positionen: 37 = D, 38 = F, 41 = J, 42 = K
+         */
+        c_sym_r { timeout-ms = <30>; key-positions = <41 42>; bindings = <&mo LAYER_Sym>; layers = <LAYER_Base>; slow-release; };
+        c_sym_l { timeout-ms = <30>; key-positions = <37 38>; bindings = <&mo LAYER_Sym>; layers = <LAYER_Base>; slow-release; };
+    };
 
     /* ===== Macros ===== */
 
@@ -121,12 +139,12 @@
         layer_Base {
             bindings = <
                 // Reihe 1
-                /* links     */ &none &none &none &none &none 
-                /* rechts    */ &none &none &none &none &none 
+                /* links     */ &F1 &F2 &F3 &F4 &F5 
+                /* rechts    */ &F5 &F5 &F5 &F5 &F5 
 
                 // Reihe 2
-                /* links     */ &none &none &none &none &none &none 
-                /* rechts    */ &none &none &none &none &none &none
+                /* links     */ &none        &kp NUMBER_1 &kp NUMBER_2 &kp NUMBER_3 &kp NUMBER_4 &kp NUMBER_5
+                /* rechts    */ &kp NUMBER_6 &kp NUMBER_7 &kp NUMBER_8 &kp NUMBER_9 &kp NUMBER_0 &none
 
                 // Reihe 3
                 /* links     */ &kp TAB     &kp Q       &kp W       &kp E       &kp R       &kp T
@@ -143,10 +161,10 @@
                 /* rechts    */ &kp N        &kp M      &kp COMMA   &kp DOT     &kp FSLH    &kp RSHFT
 
                 // Reihe 6 + untere Daumentasten
-                /* links     */ &magic LAYER_Magic 0    &none            &none                 &none  &none  
+                /* links     */ &magic LAYER_Magic 0    &none            &none            &none  &none  
                 /* Daumen L  */ &kp LGUI                &kp LALT         &mo LAYER_Nav 
-                /* Daumen R  */ &none                   &kp BACKSPACE    &kp SPACE 
-                /* rechts    */ &none                   &none            &none                 &none  &none
+                /* Daumen R  */ &kp BACKSPACE              &sym_sym         &kp SPACE 
+                /* rechts    */ &none                   &none            &none            &none  &none
             >;
         };
         
@@ -163,12 +181,12 @@
                 /* rechts    */ &none  &none  &none  &none  &none
 
                 // Reihe 2
-                /* links     */ &none  &none  &none  &none  &none  &none
-                /* rechts    */ &none  &none  &none  &none  &none  &none
+                /* links     */ &kp F1 &kp F2 &kp F3 &kp F4 &kp F5 
+                /* rechts    */ &kp F6 &kp F7 &kp F8 &kp F9 &kp F10 
 
                 // Reihe 3
                 /* links     */ &none  &none  &none  &none  &none  &none 
-                /* rechts    */ &none  &none  &none  &none  &none  &none
+                /* rechts    */ &none  &none  &none  &none  &kp F11  &kp F12
 
                 // Reihe 4
                 /* links     */ &trans           &none           &kp SPACE     &kp BSPC          &kp RET  &none 
@@ -188,7 +206,41 @@
             >;
         };
 
-        /* ----- 2: Magic (Bluetooth, RGB, Bootloader) ----- */
+         /* ----- 2: Symbol layer ----- */
+        layer_Sym {
+            display-name = "Sym";
+            bindings = <
+                // Reihe 1
+                /* links     */ &trans &trans &trans &trans &trans   
+                /* rechts    */ &trans &trans &trans &trans &trans
+
+                // Reihe 2
+                /* links     */ &kp GRAVE &kp CARET &kp LEFT_PARENTHESIS &kp RIGHT_PARENTHESIS &kp AMPERSAND &kp PERCENT
+                /* rechts    */ &kp SLASH &kp NUMBER_7 &kp NUMBER_8 &kp NUMBER_9 &trans &trans
+ 
+                // Reihe 3
+                /* links     */ &kp APOSTROPHE &kp DOUBLE_QUOTES &kp LEFT_BRACKET &kp LEFT_BRACE &kp RIGHT_BRACE &kp RIGHT_BRACKET
+                /* rechts    */ &kp MINUS &kp NUMBER_4 &kp NUMBER_5 &kp NUMBER_6 &trans &trans
+                
+                // Reihe 4
+                /* links     */ &kp HASH &kp EXCL &kp EQUAL &kp UNDERSCORE &kp DOLLAR &kp QUESTION
+                /* rechts    */ &kp PLUS &kp NUMBER_1 &kp NUMBER_2 &kp NUMBER_3 &trans &trans
+                
+                // Reihe 5 + obere Daumentasten
+                /* links     */ &kp TILDE &kp LESS_THAN &kp PIPE &none &kp GREATER_THAN &kp AT_SIGN
+                /* Daumen L  */ &trans &trans &trans   
+                /* Daumen R  */ &trans &trans &trans  
+                /* rechts    */ &kp ASTERISK &trans &kp NUMBER_0 &trans &trans &trans
+
+                // Reihe 6 + untere Daumentasten
+                /* links     */ &trans &trans &trans &trans &trans   
+                /* Daumen L  */ &trans &trans &trans   
+                /* Daumen R  */ &trans &trans &trans   
+                /* rechts    */ &trans &trans &trans &trans &trans
+            >;
+        };
+
+        /* ----- 3 Magic (Bluetooth, RGB, Bootloader) ----- */
         layer_Magic {
             bindings = <
                 // Reihe 1
