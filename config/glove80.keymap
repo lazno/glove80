@@ -101,6 +101,30 @@
             bindings = <&rgb_ug RGB_STATUS>;
         };
 
+        m_ae: m_ae {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            wait-ms = <30>;
+            tap-ms = <30>;
+            bindings = <&kp LA(U)>, <&kp A>;
+        };
+
+        m_oe: m_oe {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            wait-ms = <30>;
+            tap-ms = <30>;
+            bindings = <&kp LA(U)>, <&kp O>;
+        };
+
+        m_ue: m_ue {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            wait-ms = <30>;
+            tap-ms = <30>;
+            bindings = <&kp LA(U)>, <&kp U>;
+        };
+        
         /* Ausgabe auf Bluetooth stellen (sonst gewinnt USB, wenn ein Kabel steckt)
          * und dann das Profil auswaehlen
          */
@@ -228,7 +252,7 @@
                 /* rechts    */ &kp PLUS &kp NUMBER_1 &kp NUMBER_2 &kp NUMBER_3 &trans &trans
                 
                 // Reihe 5 + obere Daumentasten
-                /* links     */ &none  &none  &none &kp LESS_THAN &kp GREATER_THAN &kp AT_SIGN
+                /* links     */ &m_ae  &m_oe  &m_ue &kp LESS_THAN &kp GREATER_THAN &kp AT_SIGN
                 /* Daumen L  */ &trans &trans &trans   
                 /* Daumen R  */ &trans &trans &trans  
                 /* rechts    */ &kp ASTERISK &trans &kp NUMBER_0 &trans &trans &trans
